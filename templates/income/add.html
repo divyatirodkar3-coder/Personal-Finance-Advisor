@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Add Income{% endblock %}
+
+{% block content %}
+<div class="auth-wrap" style="max-width:560px;">
+    <div class="card">
+        <div class="card-header">
+            <h2>Add Income</h2>
+            <a href="{{ url_for('income.index') }}" class="btn btn-secondary btn-sm">Back</a>
+        </div>
+
+        <form method="POST" action="{{ url_for('income.add') }}" novalidate>
+            <div class="form-group">
+                <label for="source">Income source *</label>
+                <input type="text" id="source" name="source" data-label="Income source"
+                       value="{{ form.get('source', '') }}"
+                       placeholder="e.g. Infosys salary, Client ABC, Pocket money" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="income_type">Income type *</label>
+                    <select id="income_type" name="income_type" required>
+                        {% for value, label in income_types %}
+                            <option value="{{ value }}"
+                                {{ 'selected' if form.get('income_type', 'salary') == value else '' }}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount">Amount *</label>
+                    <input type="number" id="amount" name="amount" step="0.01" min="0.01"
+                           data-label="Amount" value="{{ form.get('amount', '') }}"
+                           placeholder="0.00" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="income_date">Income date *</label>
+                <input type="date" id="income_date" name="income_date"
+                       data-label="Income date" value="{{ form.get('income_date', '') }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="notes">Notes (optional)</label>
+                <textarea id="notes" name="notes" rows="3"
+                          placeholder="Anything you want to remember about this income">{{ form.get('notes', '') }}</textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Income</button>
+                <a href="{{ url_for('income.index') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

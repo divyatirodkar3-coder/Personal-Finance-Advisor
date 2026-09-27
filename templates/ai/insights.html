@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}AI Advisor{% endblock %}
+
+{% block content %}
+<div class="card-header" style="border:none; padding:0 0 16px 0;">
+    <h1>AI Financial Advisor</h1>
+    <span class="badge {{ 'badge-green' if configured else 'badge-amber' }}">
+        {{ 'Gemini connected' if configured else 'Built-in analysis (no API key)' }}
+    </span>
+</div>
+
+<!-- Month navigation -->
+<div class="card" style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('ai.insights', month=prev_month) }}">&larr; Previous</a>
+    <strong>{{ month }}</strong>
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('ai.insights', month=next_month) }}">Next &rarr;</a>
+</div>
+
+{% if not configured %}
+<div class="card" style="background:#fffbeb; border-color:#fcd34d;">
+    <h3>AI mode is off</h3>
+    <p style="margin-bottom:10px;">
+        Gemini is not switched on, so the buttons below use the built-in
+        rule-based analysis instead. The advice is real and based on your
+        data - it is just not written by Gemini.
+    </p>
+    <p class="muted" style="font-size:.88rem;">
+        To enable it, put your key in <code>.env</code>:
+        <code>GEMINI_API_KEY=your_real_key</code> then restart the app.
+        Get a free key at https://aistudio.google.com/app/apikey
+    </p>
+</div>
+{% endif %}
+
+<!-- ============ BUDGET GENERATION ============ -->
+<div class="card ai-panel">
+    <div class="card-header"><h2>AI Budget Plan</h2></div>
+    <p class="muted" style="margin-bottom:14px;">
+        Asks {{ model }} for a budget for this month, based on your real
+        income and spending.
+    </p>
+    <form method="POST" action="{{ url_for('ai.budget_plan', month=month) }}">
+        <button type="submit" name="apply" value="1" class="btn btn-primary">
+            Generate and save budgets
+        </button>
+        <button type="submit" class="btn btn-secondary">
+            Preview only
+        </button>
+    </form>
+    {% if latest.get('budget') %}
+    <div style="margin-top:18px; border-top:1px solid #ddd6fe; padding-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong>Latest budget plan</strong>
+            <span class="badge {{ 'badge-amber' if latest['budget'].is_fallback else 'badge-green' }}">
+                {{ 'built-in' if latest['budget'].is_fallback else 'Gemini' }}
+            </span>
+        </div>
+        <div class="ai-content">{{ latest['budget'].content }}</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ============ FEATURE BUTTONS ============ -->
+<div class="card">
+    <div class="card-header"><h2>Ask the AI Advisor</h2></div>
+    <p class="muted" style="margin-bottom:16px;">
+        Each button sends your real numbers for {{ month }} to Gemini and
+        saves the answer so you can read it again.
+    </p>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px;">
+        {% for key, label, question in features %}
+        <div class="card" style="margin:0; padding:16px;">
+            <h3 style="margin-bottom:4px;">{{ label }}</h3>
+            <p class="muted" style="font-size:.85rem; margin-bottom:10px;">{{ question }}</p>
+            <form method="POST" action="{{ url_for('ai.generate', month=month) }}">
+                <input type="hidden" name="feature" value="{{ key }}">
+                <button type="submit" class="btn btn-primary btn-sm btn-block">Generate</button>
+            </form>
+            {% if latest.get(key) %}
+            <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:10px;">
+                <span class="badge {{ 'badge-amber' if latest[key].is_fallback else 'badge-green' }}">
+                    {{ 'built-in' if latest[key].is_fallback else 'Gemini' }}
+                </span>
+                <div class="ai-content" style="font-size:.86rem; margin-top:8px;">{{ latest[key].content }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ============ HISTORY ============ -->
+<div class="card">
+    <div class="card-header"><h2>Advice History</h2></div>
+    {% if history %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Month</th>
+                    <th>Source</th>
+                    <th>Preview</th>
+                    <th class="num">Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in history %}
+                <tr>
+                    <td>{{ row.title }}</td>
+                    <td>{{ row.month or '-' }}</td>
+                    <td>
+                        <span class="badge {{ 'badge-amber' if row.is_fallback else 'badge-green' }}">
+                            {{ 'built-in' if row.is_fallback else 'Gemini' }}
+                        </span>
+                    </td>
+                    <td class="muted" style="font-size:.84rem; max-width:320px;">
+                        {{ row.content[:110] }}{% if row.content|length > 110 %}...{% endif %}
+                    </td>
+                    <td class="num">
+                        <form method="POST" action="{{ url_for('ai.delete_insight', insight_id=row.id) }}"
+                              onsubmit="return confirm('Delete this advice?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No advice generated yet. Use a button above.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

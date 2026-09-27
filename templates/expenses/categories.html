@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Expense Categories{% endblock %}
+
+{% block content %}
+<h1>Expense Categories</h1>
+<p class="muted" style="margin-bottom:20px;">
+    Categories are personal to your account. Use them to group spending
+    (e.g. Food, Rent, Transport) so the app can analyse where your money goes.
+</p>
+
+<div class="grid-2">
+    <!-- ============ ADD NEW CATEGORY ============ -->
+    <div class="card">
+        <div class="card-header"><h2>Add a Category</h2></div>
+        <form method="POST" action="{{ url_for('expenses.categories') }}" novalidate>
+            <div class="form-group">
+                <label for="name">Category name *</label>
+                <input type="text" id="name" name="name" maxlength="60"
+                       placeholder="e.g. Pet care, Gym, Subscriptions" required>
+            </div>
+
+            <div class="form-group">
+                <label>Colour (used in charts)</label>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                    {% for color in colors %}
+                    <label style="font-weight:400; margin:0;">
+                        <input type="radio" name="color" value="{{ color }}" style="width:auto; margin-right:0;"
+                               {{ 'checked' if loop.first else '' }}>
+                        <span style="display:inline-block; width:22px; height:22px; border-radius:5px;
+                                     background: {{ '%s'|format(color) }}; border : 1px solid #cbd5e1;"></span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create Category</button>
+        </form>
+    </div>
+
+    <!-- ============ EXISTING CATEGORIES ============ -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Your Categories</h2>
+            <span class="badge badge-grey">{{ categories|length }}</span>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th class="num">Total spent</th>
+                        <th class="num">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in categories %}
+                    <tr>
+                        <td>
+                            <span style="display:inline-block; width:12px; height:12px; border-radius:3px;
+                                         background:{{ '%s'|format(category.color) }}; margin-right:7px;"></span>
+                            {{ category.name }}
+                            {% if category.is_default %}
+                                <span class="badge badge-blue">default</span>
+                            {% endif %}
+                        </td>
+                        <td class="num">{{ current_user.currency }} {{ "%.2f"|format(usage[category.id]) }}</td>
+                        <td class="num">
+                            <form method="POST" action="{{ url_for('expenses.category_delete', category_id=category.id) }}"
+                                  onsubmit="return confirm('Delete the category {{ category.name }}?');">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <p class="muted" style="font-size:.85rem; margin-top:12px;">
+            A category that still has expenses cannot be deleted - move or
+            delete those expenses first.
+        </p>
+    </div>
+</div>
+{% endblock %}

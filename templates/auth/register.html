@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Create Account{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1>Create Account</h1>
+        <p class="auth-sub">Start managing your money with AI guidance</p>
+
+        <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+            <div class="form-group">
+                <label for="full_name">Full name</label>
+                <input type="text" id="full_name" name="full_name"
+                       value="{{ full_name or '' }}" placeholder="e.g. Rahul Sharma" required>
+            </div>
+
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" data-label="Username"
+                       value="{{ username or '' }}" placeholder="e.g. rahul" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email address</label>
+                <input type="email" id="email" name="email" data-label="Email"
+                       value="{{ email or '' }}" placeholder="you@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="savings_goal">Monthly savings goal (optional)</label>
+                <input type="number" id="savings_goal" name="savings_goal"
+                       data-label="Savings goal" value="{{ savings_goal or '' }}"
+                       min="0" step="0.01" placeholder="5000">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password"
+                       data-label="Password" placeholder="At least 6 characters" required>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">Confirm password</label>
+                <input type="password" id="confirm_password" name="confirm_password"
+                       data-label="Password confirmation" data-confirm-for="password"
+                       placeholder="Type it again" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+        </form>
+
+        <p class="auth-foot">
+            Already registered? <a href="{{ url_for('auth.login') }}">Log in here</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

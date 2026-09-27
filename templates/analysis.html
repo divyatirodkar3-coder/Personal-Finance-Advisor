@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Analysis{% endblock %}
+
+{% block content %}
+<div class="card-header" style="border:none; padding:0 0 16px 0;">
+    <h1>Spending Analysis</h1>
+    <a href="{{ url_for('analysis.index', month=month) }}" class="btn btn-secondary">Re-run analysis</a>
+</div>
+
+<div class="card" style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('analysis.index', month=prev_month) }}">&larr; Previous</a>
+    <strong>{{ month }}</strong>
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('analysis.index', month=next_month) }}">Next &rarr;</a>
+</div>
+
+<!-- ============ HEALTH SCORE ============ -->
+<div class="card">
+    <div class="card-header">
+        <h2>Financial Health Score</h2>
+        <span class="badge badge-{{ data.health.colour }}">{{ data.health.label }}</span>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap;">
+        <div style="text-align:center; min-width:130px;">
+            <div style="font-size:3.2rem; font-weight:700; line-height:1;">
+                {{ data.health.score }}
+            </div>
+            <div class="muted" style="font-size:.82rem;">out of 100</div>
+        </div>
+        <div style="flex:1; min-width:240px;">
+            <div class="progress" style="height:16px;">
+                <div class="progress-bar {{ 'over' if data.health.score < 40 else ('warn' if data.health.score < 60 else '') }}"
+                     style="width: {{ data.health.score }}%;"></div>
+            </div>
+            <p class="muted" style="font-size:.85rem; margin-top:8px;">
+                Built from three parts, each with a fixed maximum.
+            </p>
+        </div>
+    </div>
+
+    <div class="table-wrap" style="margin-top:18px;">
+        <table>
+            <thead>
+                <tr><th>Component</th><th class="num">Points</th><th>Why</th></tr>
+            </thead>
+            <tbody>
+                {% for reason in data.health.reasons %}
+                <tr>
+                    <td><strong>{{ reason.label }}</strong></td>
+                    <td class="num">{{ reason.points }} / {{ reason.max }}</td>
+                    <td class="muted" style="font-size:.86rem;">{{ reason.note }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ============ SUMMARY CARDS ============ -->
+<div class="stat-grid">
+    <div class="stat-card stat-green">
+        <div class="stat-label">Income</div>
+        <div class="stat-value">{{ "%.2f"|format(data.income) }}</div>
+    </div>
+    <div class="stat-card stat-red">
+        <div class="stat-label">Expenses</div>
+        <div class="stat-value">{{ "%.2f"|format(data.expenses) }}</div>
+    </div>
+    <div class="stat-card {{ 'stat-red' if data.savings < 0 else 'stat-green' }}">
+        <div class="stat-label">Savings</div>
+        <div class="stat-value">{{ "%.2f"|format(data.savings) }}</div>
+    </div>
+    <div class="stat-card stat-amber">
+        <div class="stat-label">Average per day</div>
+        <div class="stat-value">{{ "%.2f"|format(data.daily) }}</div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- ============ OVERSPENDING ============ -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Overspending</h2>
+            <span class="badge {{ 'badge-red' if data.overspent else 'badge-green' }}">
+                {{ data.overspent|length }} category(s)
+            </span>
+        </div>
+        {% if data.overspent %}
+            {% for row in data.overspent %}
+            <div style="margin-bottom:14px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                    <strong>{{ row.name }}</strong>
+                    <span class="badge badge-red">Over by {{ "%.2f"|format(-row.remaining) }}</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar over" style="width:100%;"></div>
+                </div>
+                <p class="muted" style="font-size:.84rem; margin-top:4px;">
+                    Spent {{ "%.2f"|format(row.spent) }} of a
+                    {{ "%.2f"|format(row.planned) }} budget
+                    ({{ "%.0f"|format(row.percent) }}%).
+                </p>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <p>No category is over budget for {{ month }}.</p>
+            </div>
+        {% endif %}
+
+        {% if data.near_limit %}
+        <p class="muted" style="margin-top:10px; font-size:.86rem;">
+            Near the limit:
+            {% for row in data.near_limit %}<strong>{{ row.name }}</strong> ({{ "%.0f"|format(row.percent) }}%){{ ", " if not loop.last }}{% endfor %}
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- ============ TOP CATEGORIES ============ -->
+    <div class="card">
+        <div class="card-header"><h2>Top Spending Categories</h2></div>
+        {% if data.top %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Category</th><th class="num">Spent</th><th class="num">Share</th></tr>
+                </thead>
+                <tbody>
+                    {% for name, value in data.top %}
+                    <tr>
+                        <td>{{ name }}</td>
+                        <td class="num">{{ "%.2f"|format(value) }}</td>
+                        <td class="num">{{ "%.1f"|format(value / data.expenses * 100 if data.expenses else 0) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty-state"><p>No spending recorded for {{ month }}.</p></div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ============ PLAIN-LANGUAGE INSIGHTS ============ -->
+<div class="card ai-panel">
+    <div class="card-header">
+        <h2>What your numbers say</h2>
+        <span class="badge badge-blue">rule-based &middot; Gemini in Stage 11</span>
+    </div>
+    {% if data.insights %}
+    <ul style="margin:0; padding-left:20px;" class="ai-content">
+        {% for message in data.insights %}
+        <li style="margin-bottom:8px;">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">Nothing to analyse yet.</p>
+    {% endif %}
+</div>
+
+<!-- ============ MONTH COMPARISON ============ -->
+<div class="card">
+    <div class="card-header"><h2>Compared with {{ data.comparison.previous_month }}</h2></div>
+    <table>
+        <tr>
+            <th>This month ({{ month }})</th>
+            <td class="num">{{ "%.2f"|format(data.comparison.current) }}</td>
+        </tr>
+        <tr>
+            <th>Previous ({{ data.comparison.previous_month }})</th>
+            <td class="num">{{ "%.2f"|format(data.comparison.previous) }}</td>
+        </tr>
+        <tr>
+            <th>Change</th>
+            <td class="num">
+                {% if data.comparison.percent is not none %}
+                    <span class="badge {{ 'badge-red' if data.comparison.direction == 'up' else 'badge-green' }}">
+                        {{ data.comparison.percent }}%
+                    </span>
+                {% else %}
+                    <span class="muted">no previous data</span>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</div>
+{% endblock %}
+

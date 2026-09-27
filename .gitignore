@@ -1,0 +1,25 @@
+# ===== SECRETS - never commit these =====
+.env
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# ===== Database =====
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== Ngrok =====
+.ngrok/
+
+# ===== OS / Editor =====
+.DS_Store
+Thumbs.db
+.vscode/

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Expenses{% endblock %}
+
+{% block content %}
+<div class="card-header" style="border:none; padding:0 0 16px 0;">
+    <h1>Expenses</h1>
+    <div>
+        <a href="{{ url_for('expenses.categories') }}" class="btn btn-secondary">Categories</a>
+        <a href="{{ url_for('expenses.add') }}" class="btn btn-primary">+ Add Expense</a>
+    </div>
+</div>
+
+<!-- Month navigation -->
+<div class="card" style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('expenses.index', month=prev_month) }}">&larr; Previous</a>
+    <strong>{{ month }}</strong>
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('expenses.index', month=next_month) }}">Next &rarr;</a>
+</div>
+
+<!-- Summary cards -->
+<div class="stat-grid">
+    <div class="stat-card stat-red">
+        <div class="stat-label">Total expenses</div>
+        <div class="stat-value">{{ "%.2f"|format(total) }}</div>
+        <div class="stat-hint">{{ records|length }} expense(s) in {{ month }}</div>
+    </div>
+    <div class="stat-card stat-green">
+        <div class="stat-label">Income this month</div>
+        <div class="stat-value">{{ "%.2f"|format(income) }}</div>
+    </div>
+    <div class="stat-card {{ 'stat-green' if savings >= 0 else 'stat-red' }}">
+        <div class="stat-label">Savings (income - expenses)</div>
+        <div class="stat-value">{{ "%.2f"|format(savings) }}</div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- ============ CATEGORY BREAKDOWN ============ -->
+    <div class="card">
+        <div class="card-header"><h2>Spending by Category</h2></div>
+        {% if breakdown %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Category</th><th class="num">Amount</th><th class="num">Share</th></tr>
+                </thead>
+                <tbody>
+                    {% for name, value in breakdown.items()|sort(attribute='1', reverse=true) %}
+                    <tr>
+                        <td>
+                            <span style="display:inline-block; width:12px; height:12px; border-radius:3px;
+                                         background:{{ colors.get(name, '#64748b') }}; margin-right:7px;"></span>
+                            {{ name }}
+                        </td>
+                        <td class="num">{{ "%.2f"|format(value) }}</td>
+                        <td class="num">{{ "%.1f"|format(value / total * 100 if total else 0) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty-state"><p>No spending recorded for {{ month }}.</p></div>
+        {% endif %}
+    </div>
+
+    <!-- ============ WEEKLY VIEW ============ -->
+    <div class="card">
+        <div class="card-header"><h2>Weekly Spending</h2></div>
+        {% if weeks %}
+            {% set max_week = weeks|map(attribute=1)|max %}
+            {% for label, week_total, first_day, last_day in weeks %}
+            <div style="margin-bottom:14px;">
+                <div style="display:flex; justify-content:space-between; font-size:.88rem; margin-bottom:4px;">
+                    <span>{{ label }}</span>
+                    <strong>{{ "%.2f"|format(week_total) }}</strong>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar {{ 'over' if income and week_total > income else '' }}"
+                         style="width: {{ (week_total / max_week * 100) if max_week else 0 }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state"><p>No weekly data for {{ month }}.</p></div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ============ EXPENSE RECORDS ============ -->
+<div class="card">
+    <div class="card-header"><h2>Expense Records</h2></div>
+    {% if records %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Paid via</th>
+                    <th class="num">Amount</th>
+                    <th class="num">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>{{ record.expense_date.strftime('%d %b') }}</td>
+                    <td>
+                        {{ record.title }}
+                        {% if record.notes %}<br><span class="muted" style="font-size:.82rem;">{{ record.notes }}</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if record.category %}
+                            <span class="badge" style="background:{{ record.category.color ~ 22 }}; color:{{ record.category.color }};">
+                                {{ record.category.name }}
+                            </span>
+                        {% else %}
+                            <span class="badge badge-grey">Uncategorised</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ record.payment_method }}</td>
+                    <td class="num">{{ "%.2f"|format(record.amount) }}</td>
+                    <td class="num">
+                        <div class="table-actions" style="justify-content:flex-end;">
+                            <a class="btn btn-secondary btn-sm" href="{{ url_for('expenses.edit', expense_id=record.id) }}">Edit</a>
+                            <form method="POST" action="{{ url_for('expenses.delete', expense_id=record.id) }}"
+                                  onsubmit="return confirm('Delete this expense?');">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No expenses recorded for {{ month }}.</p>
+            <a href="{{ url_for('expenses.add') }}" class="btn btn-primary">Add your first expense</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

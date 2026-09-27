@@ -1,0 +1,267 @@
+/* ============================================================
+   Personal Finance Advisor Bot - Main Stylesheet
+   Plain CSS. No frameworks. Organised in sections.
+   ============================================================ */
+
+/* ---------- 1. COLOURS (CSS variables) ---------- */
+:root {
+    --bg:          #f4f6fb;
+    --surface:     #ffffff;
+    --primary:     #2563eb;
+    --primary-dk:  #1d4ed8;
+    --text:        #1e293b;
+    --muted:       #64748b;
+    --border:      #e2e8f0;
+    --green:       #16a34a;
+    --red:         #dc2626;
+    --amber:       #d97706;
+    --radius:      10px;
+    --shadow:      0 1px 3px rgba(15,23,42,.08), 0 1px 2px rgba(15,23,42,.04);
+}
+
+/* ---------- 2. RESET & BASE ---------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.container { width: 100%; max-width: 1150px; margin: 0 auto; padding: 0 20px; }
+.page { flex: 1; padding-top: 28px; padding-bottom: 40px; }
+.muted { color: var(--muted); }
+h1, h2, h3 { line-height: 1.25; margin-bottom: .5rem; }
+h1 { font-size: 1.9rem; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.05rem; }
+
+/* ---------- 3. TOP NAVIGATION BAR ---------- */
+.topbar { background: var(--surface); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
+.topbar-inner {
+    max-width: 1150px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; color: var(--text); }
+.brand:hover { text-decoration: none; }
+.brand-mark {
+    background: var(--primary); color: #fff; width: 32px; height: 32px;
+    border-radius: 8px; display: grid; place-items: center; font-size: 1.1rem;
+}
+.nav-links { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nav-links a { color: var(--muted); padding: 7px 12px; border-radius: 7px; font-size: .92rem; font-weight: 500; }
+.nav-links a:hover { background: #eef2ff; color: var(--primary); text-decoration: none; }
+.nav-links a.active { background: var(--primary); color: #fff; }
+
+/* The Log Out control.
+   It used to be a plain .btn-secondary, which is white-on-white in a white
+   topbar and read as just another nav word, so people could not spot it.
+   These rules give it the same look as the other nav items but with a
+   visible outline and a hover colour, so it is obviously a button and it
+   is never lost at the end of a wrapped nav. */
+.nav-logout { margin: 0; }
+.nav-logout-btn {
+    display: inline-block;
+    font: inherit;
+    font-size: .92rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.nav-logout-btn:hover {
+    color: var(--red);
+    border-color: var(--red);
+    background: #fef2f2;
+}
+.nav-logout-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ---------- 4. BUTTONS ---------- */
+.btn {
+    display: inline-block; padding: 9px 16px; border-radius: 8px;
+    border: 1px solid transparent; font-size: .92rem; font-weight: 600;
+    cursor: pointer; text-align: center;
+}
+.btn:hover { text-decoration: none; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dk); color: #fff; }
+.btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+.btn-secondary:hover { background: #f8fafc; }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-sm { padding: 5px 10px; font-size: .82rem; }
+.btn-block { display: block; width: 100%; }
+
+/* ---------- 5. CARDS ---------- */
+.card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+.card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+
+/* ---------- 6. STAT CARDS (dashboard) ---------- */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); border-left: 4px solid var(--primary); }
+.stat-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+.stat-value { font-size: 1.6rem; font-weight: 700; margin: 6px 0 2px; }
+.stat-hint { font-size: .8rem; color: var(--muted); }
+.stat-green { border-left-color: var(--green); }
+.stat-red { border-left-color: var(--red); }
+.stat-amber { border-left-color: var(--amber); }
+
+/* ---------- 7. FORMS ---------- */
+.form-group { margin-bottom: 16px; }
+.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
+label { display: block; font-size: .87rem; font-weight: 600; margin-bottom: 5px; color: #334155; }
+input, select, textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: .93rem; font-family: inherit;
+    background: #fff; color: var(--text);
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+.field-error { color: var(--red); font-size: .8rem; margin-top: 4px; }
+.form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.auth-wrap { max-width: 420px; margin: 40px auto; }
+.auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow); }
+.auth-card h1 { text-align: center; margin-bottom: 6px; }
+.auth-sub { text-align: center; color: var(--muted); font-size: .9rem; margin-bottom: 22px; }
+.auth-foot { text-align: center; margin-top: 18px; font-size: .88rem; }
+
+/* ---------- 8. TABLES ---------- */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: #f8fafc; font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+tbody tr:hover { background: #f8fafc; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.empty-state { text-align: center; padding: 34px 16px; color: var(--muted); }
+.table-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ---------- 9. FLASH MESSAGES ---------- */
+.flash-area { margin-top: 16px; }
+.flash { padding: 11px 15px; border-radius: 8px; margin-bottom: 8px; font-size: .9rem; border: 1px solid transparent; }
+.flash-success { background: #dcfce7; color: #14532d; border-color: #86efac; }
+.flash-danger { background: #fee2e2; color: #7f1d1d; border-color: #fca5a5; }
+.flash-warning { background: #fef3c7; color: #78350f; border-color: #fcd34d; }
+.flash-info { background: #dbeafe; color: #1e3a8a; border-color: #93c5fd; }
+
+/* ---------- 10. BADGES & PROGRESS BARS ---------- */
+.badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: .74rem; font-weight: 700; }
+.badge-green { background: #dcfce7; color: #14532d; }
+.badge-red { background: #fee2e2; color: #7f1d1d; }
+.badge-amber { background: #fef3c7; color: #78350f; }
+.badge-blue { background: #dbeafe; color: #1e3a8a; }
+.badge-grey { background: #e2e8f0; color: #334155; }
+.progress { background: #e2e8f0; border-radius: 999px; height: 9px; overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 999px; background: var(--green); }
+.progress-bar.warn { background: var(--amber); }
+.progress-bar.over { background: var(--red); }
+
+/* ---------- 11. HERO / WELCOME PAGE ---------- */
+.hero { text-align: center; padding: 26px 0; }
+.hero .lead { color: var(--muted); max-width: 620px; margin: 10px auto 26px; font-size: 1.02rem; }
+.setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow); max-width: 620px; margin: 0 auto; text-align: left; }
+.setup-list { margin: 14px 0 16px 18px; }
+.setup-list li { margin-bottom: 6px; font-size: .93rem; }
+code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: .87em; }
+
+/* ---------- 17. CLIENT-SIDE VALIDATION MESSAGES ---------- */
+/* Added by static/js/forms.js. A small red note under a bad field. */
+.js-error {
+    display: block;
+    color: var(--red);
+    font-size: .8rem;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.input-error {
+    border-color: var(--red) !important;
+    background: #fef2f2;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, .12);
+}
+
+/* Stop the page jumping when a message appears above the fold. */
+form {
+    scroll-margin-top: 80px;
+}
+
+/* ---------- 16. PRINT STYLES (monthly reports) ---------- */
+@media print {
+    /* Hide the navigation, buttons and flash messages when printing,
+       so the printed page contains only the report itself. */
+    .topbar,
+    .footer,
+    .nav-links,
+    .flash-area,
+    .btn,
+    .form-actions {
+        display: none !important;
+    }
+
+    body {
+        background: #ffffff;
+        color: #000000;
+    }
+
+    .card {
+        border: 1px solid #999999;
+        box-shadow: none;
+        page-break-inside: avoid;
+        margin-bottom: 12px;
+    }
+
+    .page {
+        padding-top: 0;
+    }
+
+    .stat-card,
+    .badge {
+        border: 1px solid #999999;
+    }
+
+    a {
+        color: #000000;
+        text-decoration: none;
+    }
+}
+
+
+/* ---------- 12. ERROR PAGES ---------- */
+.error-page { text-align: center; padding: 50px 20px; }
+.error-page h1 { font-size: 4rem; color: var(--primary); margin-bottom: 4px; }
+.error-page p { color: var(--muted); margin-bottom: 22px; }
+
+/* ---------- 13. GRIDS & CHARTS ---------- */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.chart-box { position: relative; height: 280px; }
+@media (max-width: 820px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* ---------- 14. FOOTER ---------- */
+.footer { background: var(--surface); border-top: 1px solid var(--border); padding: 18px 0; margin-top: auto; }
+.footer p { text-align: center; color: var(--muted); font-size: .84rem; }
+
+/* ---------- 15. AI PANEL ---------- */
+.ai-panel { background: linear-gradient(135deg, #f5f3ff, #eff6ff); border: 1px solid #ddd6fe; }
+.ai-content { white-space: pre-wrap; font-size: .93rem; line-height: 1.7; }
+

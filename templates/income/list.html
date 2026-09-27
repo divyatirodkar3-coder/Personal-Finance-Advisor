@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Income{% endblock %}
+
+{% block content %}
+<div class="card-header" style="border:none; padding:0 0 16px 0;">
+    <h1>Income</h1>
+    <a href="{{ url_for('income.add') }}" class="btn btn-primary">+ Add Income</a>
+</div>
+
+<!-- Month navigation -->
+<div class="card" style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('income.index', month=prev_month) }}">&larr; Previous</a>
+    <strong>{{ month }}</strong>
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('income.index', month=next_month) }}">Next &rarr;</a>
+</div>
+
+<!-- Totals -->
+<div class="stat-grid">
+    <div class="stat-card stat-green">
+        <div class="stat-label">Total income</div>
+        <div class="stat-value">{{ current_user.currency }} {{ "%.2f"|format(total) }}</div>
+        <div class="stat-hint">{{ records|length }} record(s) in {{ month }}</div>
+    </div>
+    {% for value, label in income_types if by_type.get(value) %}
+    <div class="stat-card">
+        <div class="stat-label">{{ label }}</div>
+        <div class="stat-value">{{ "%.2f"|format(by_type[value]) }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Records table -->
+<div class="card">
+    <div class="card-header"><h2>Income Records</h2></div>
+    {% if records %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Source</th>
+                    <th>Type</th>
+                    <th class="num">Amount</th>
+                    <th class="num">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>{{ record.income_date.strftime('%d %b %Y') }}</td>
+                    <td>
+                        {{ record.source }}
+                        {% if record.notes %}<br><span class="muted" style="font-size:.82rem;">{{ record.notes }}</span>{% endif %}
+                    </td>
+                    <td><span class="badge badge-blue">{{ record.income_type }}</span></td>
+                    <td class="num">{{ "%.2f"|format(record.amount) }}</td>
+                    <td class="num">
+                        <form method="POST" action="{{ url_for('income.delete', record_id=record.id) }}"
+                              onsubmit="return confirm('Delete this income record?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No income recorded for {{ month }}.</p>
+            <a href="{{ url_for('income.add') }}" class="btn btn-primary">Add your first income</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

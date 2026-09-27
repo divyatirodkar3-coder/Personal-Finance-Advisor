@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="card-header" style="border:none; padding:0 0 16px 0;">
+    <h1>Dashboard</h1>
+    <span class="badge badge-{{ health.colour }}">Health {{ health.score }}/100</span>
+</div>
+
+<!-- Month navigation -->
+<div class="card" style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('dashboard.index', month=prev_month) }}">&larr; Previous</a>
+    <strong>{{ month }}</strong>
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('dashboard.index', month=next_month) }}">Next &rarr;</a>
+</div>
+
+<!-- ============ INCOME OVERVIEW + SAVINGS PROGRESS ============ -->
+<div class="stat-grid">
+    <div class="stat-card stat-green">
+        <div class="stat-label">Income Overview</div>
+        <div class="stat-value">{{ "%.2f"|format(income) }}</div>
+        <div class="stat-hint">received in {{ month }}</div>
+    </div>
+    <div class="stat-card stat-red">
+        <div class="stat-label">Expense Breakdown</div>
+        <div class="stat-value">{{ "%.2f"|format(expenses) }}</div>
+        <div class="stat-hint">about {{ "%.2f"|format(daily) }} per day</div>
+    </div>
+    <div class="stat-card {{ 'stat-red' if savings < 0 else 'stat-green' }}">
+        <div class="stat-label">Savings</div>
+        <div class="stat-value">{{ "%.2f"|format(savings) }}</div>
+        <div class="stat-hint">income minus expenses</div>
+    </div>
+    <div class="stat-card stat-amber">
+        <div class="stat-label">Savings Goal</div>
+        <div class="stat-value">{{ "%.2f"|format(savings_summary.percent) }}%</div>
+        <div class="stat-hint">of {{ "%.2f"|format(savings_summary.target) }}</div>
+    </div>
+</div>
+
+{% if savings_summary.target > 0 %}
+<div class="card" style="padding:16px 20px;">
+    <div style="display:flex; justify-content:space-between; font-size:.88rem; margin-bottom:6px;">
+        <span>Savings Progress Tracking</span>
+        <span><strong>{{ "%.1f"|format(savings_summary.percent) }}%</strong>
+              &middot; {{ savings_summary.status_word }}</span>
+    </div>
+    <div class="progress" style="height:14px;">
+        <div class="progress-bar {{ 'over' if savings < 0 else '' }}"
+             style="width: {{ savings_summary.percent if savings_summary.percent < 100 else 100 }}%;"></div>
+    </div>
+</div>
+{% endif %}
+
+{% if overspent %}
+<div class="card" style="border-left:4px solid var(--red);">
+    <h3 style="color:var(--red);">Overspending Alert</h3>
+    <ul style="margin:8px 0 0 18px;">
+        {% for row in overspent %}
+        <li><strong>{{ row.name }}</strong> is over by
+            {{ "%.2f"|format(-row.remaining) }}
+            ({{ "%.0f"|format(row.percent) }}% of budget used)</li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('analysis.index', month=month) }}" class="btn btn-secondary btn-sm" style="margin-top:10px;">
+        See full analysis
+    </a>
+</div>
+{% endif %}
+
+<!-- ============ CHARTS (real database data via the JSON API) ============ -->
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><h2>Category-Wise Expense Analytics</h2></div>
+        <div class="chart-box"><canvas id="categoryChart"></canvas></div>
+        <p class="muted" id="categoryEmpty" style="text-align:center; display:none;">
+            No spending recorded for {{ month }}.
+        </p>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h2>Budget Performance</h2></div>
+        <div class="chart-box"><canvas id="budgetChart"></canvas></div>
+        <p class="muted" id="budgetEmpty" style="text-align:center; display:none;">
+            No budgets set for {{ month }}.
+        </p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>6-Month Income vs Expenses</h2>
+        <span class="badge badge-blue">monthly trend</span>
+    </div>
+    <div class="chart-box" style="height:300px;"><canvas id="trendChart"></canvas></div>
+</div>
+
+<!-- ============ AI RECOMMENDATION DISPLAY ============ -->
+<div class="card ai-panel">
+    <div class="card-header">
+        <h2>AI Recommendation</h2>
+        <span class="badge {{ 'badge-green' if ai_configured else 'badge-amber' }}">
+            {{ 'Gemini ready' if ai_configured else 'built-in analysis' }}
+        </span>
+    </div>
+
+    {% if latest_ai %}
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+            <strong>{{ latest_ai.title }}</strong>
+            <span class="badge {{ 'badge-amber' if latest_ai.is_fallback else 'badge-green' }}">
+                {{ 'built-in' if latest_ai.is_fallback else 'Gemini' }}
+            </span>
+            <span class="muted" style="font-size:.84rem;">for {{ latest_ai.month or month }}</span>
+        </div>
+        <div class="ai-content">{{ latest_ai.content }}</div>
+    {% else %}
+        <p class="muted" style="margin-bottom:12px;">
+            No AI advice yet. Generate your first recommendation.
+        </p>
+    {% endif %}
+
+    <div class="form-actions" style="margin-top:14px;">
+        <a href="{{ url_for('ai.insights', month=month) }}" class="btn btn-primary btn-sm">
+            Open AI Advisor
+        </a>
+    </div>
+</div>
+
+<!-- ============ SPENDING ANALYSIS SUMMARY ============ -->
+<div class="card">
+    <div class="card-header"><h2>What your numbers say</h2></div>
+    <ul style="margin:0; padding-left:20px;" class="ai-content">
+        {% for message in insights %}
+        <li style="margin-bottom:7px;">{{ message }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- ============ RECENT TRANSACTIONS ============ -->
+<div class="card">
+    <div class="card-header">
+        <h2>Recent Transactions</h2>
+        <span class="badge badge-grey">{{ recent|length }}</span>
+    </div>
+    {% if recent %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th><th>Type</th><th>Description</th>
+                    <th>Category</th><th class="num">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in recent %}
+                <tr>
+                    <td>{{ item.date.strftime('%d %b') }}</td>
+                    <td>
+                        <span class="badge {{ 'badge-green' if item.kind == 'income' else 'badge-red' }}">
+                            {{ item.kind }}
+                        </span>
+                    </td>
+                    <td>{{ item.label }}</td>
+                    <td>{{ item.category }}</td>
+                    <td class="num">{{ "%.2f"|format(item.amount) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No activity recorded for {{ month }}.</p>
+            <a href="{{ url_for('income.add') }}" class="btn btn-primary">Add income</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

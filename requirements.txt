@@ -1,0 +1,29 @@
+# ===== Personal Finance Advisor Bot =====
+# Python dependencies. Install with:  pip install -r requirements.txt
+#
+# NOTE: these are minimum versions, not exact pins. To freeze the exact
+# versions currently working on your machine, run:  pip freeze
+
+# --- Web framework ---
+Flask>=3.0
+Werkzeug>=3.0            # password hashing (scrypt) and security headers
+
+# --- Database ORM ---
+Flask-SQLAlchemy>=3.1
+SQLAlchemy>=2.0
+
+# --- Login / session handling ---
+Flask-Login>=0.6
+# Sessions are stored in a signed cookie. python-dotenv loads SECRET_KEY.
+
+# --- Configuration / secrets ---
+python-dotenv>=1.0       # reads the .env file (SECRET_KEY, GEMINI_API_KEY)
+
+# --- AI (Google Gemini) ---
+# Must be 2.x: services/ai_service.py uses client-level HttpOptions
+# (timeout + retry_options), and "timeout" is not a valid field in a
+# per-request GenerateContentConfig in this version.
+google-genai>=2.0
+
+# --- Testing (not needed to run the app) ---
+pytest>=8.0

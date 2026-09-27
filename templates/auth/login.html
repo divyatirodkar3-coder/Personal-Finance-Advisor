@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Log In{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1>Log In</h1>
+        <p class="auth-sub">Personal Finance Advisor Bot</p>
+
+        <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+            <div class="form-group">
+                <label for="login">Username or email</label>
+                <input type="text" id="login" name="login"
+                       value="{{ login or '' }}" placeholder="e.g. rahul" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <div class="form-group">
+                <label style="font-weight:500;">
+                    <input type="checkbox" name="remember" style="width:auto; margin-right:6px;">
+                    Keep me logged in
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Log In</button>
+        </form>
+
+        <p class="auth-foot">
+            New here? <a href="{{ url_for('auth.register') }}">Create an account</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

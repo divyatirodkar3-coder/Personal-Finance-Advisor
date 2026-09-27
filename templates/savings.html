@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Savings{% endblock %}
+
+{% block content %}
+<div class="card-header" style="border:none; padding:0 0 16px 0;">
+    <h1>Savings Tracking</h1>
+    <form method="POST" action="{{ url_for('savings.refresh') }}">
+        <button type="submit" class="btn btn-secondary">Refresh all months</button>
+    </form>
+</div>
+
+<!-- Month navigation -->
+<div class="card" style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('savings.index', month=prev_month) }}">&larr; Previous</a>
+    <strong>{{ month }}</strong>
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('savings.index', month=next_month) }}">Next &rarr;</a>
+</div>
+
+<!-- ============ THIS MONTH ============ -->
+<div class="card">
+    <div class="card-header">
+        <h2>Savings for {{ month }}</h2>
+        <span class="badge {{ 'badge-green' if summary.status == 'achieved' else ('badge-blue' if summary.status == 'on_track' else ('badge-amber' if summary.status == 'behind' else 'badge-grey')) }}">
+            {{ summary.status_word }}
+        </span>
+    </div>
+
+    <p class="muted" style="margin-bottom:16px;">
+        Your savings are calculated automatically:
+        <strong>{{ "%.2f"|format(summary.income) }}</strong> income
+        &minus; <strong>{{ "%.2f"|format(summary.expenses) }}</strong> expenses
+        = <strong>{{ "%.2f"|format(summary.saved) }}</strong> saved.
+    </p>
+
+    {% if summary.target > 0 %}
+        <div style="display:flex; justify-content:space-between; font-size:.9rem; margin-bottom:6px;">
+            <span>Goal progress</span>
+            <span><strong>{{ "%.1f"|format(summary.percent) }}%</strong> of {{ "%.2f"|format(summary.target) }}</span>
+        </div>
+        <div class="progress" style="height:14px;">
+            <div class="progress-bar {{ 'over' if summary.saved < 0 else '' }}"
+                 style="width: {{ summary.percent if summary.percent < 100 else 100 }}%;"></div>
+        </div>
+        <p class="muted" style="margin-top:8px; font-size:.86rem;">
+            {% if summary.remaining > 0 %}
+                You need <strong>{{ "%.2f"|format(summary.remaining) }}</strong> more to reach the goal.
+            {% else %}
+                You have already reached your goal for this month.
+            {% endif %}
+            &nbsp;|&nbsp; {{ "%.1f"|format(summary.progress) }}% of the month has passed.
+        </p>
+    {% else %}
+        <p class="muted">
+            No savings goal set. Set one below (or in your profile) to track progress.
+        </p>
+    {% endif %}
+
+    <div class="stat-grid" style="margin-top:20px; margin-bottom:0;">
+        <div class="stat-card stat-green">
+            <div class="stat-label">Income</div>
+            <div class="stat-value">{{ "%.2f"|format(summary.income) }}</div>
+        </div>
+        <div class="stat-card stat-red">
+            <div class="stat-label">Expenses</div>
+            <div class="stat-value">{{ "%.2f"|format(summary.expenses) }}</div>
+        </div>
+        <div class="stat-card {{ 'stat-red' if summary.saved < 0 else 'stat-green' }}">
+            <div class="stat-label">Saved</div>
+            <div class="stat-value">{{ "%.2f"|format(summary.saved) }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Goal</div>
+            <div class="stat-value">{{ "%.2f"|format(summary.target) }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- ============ SET TARGET FOR THIS MONTH ============ -->
+    <div class="card">
+        <div class="card-header"><h2>Set Goal for {{ month }}</h2></div>
+        <form method="POST" action="{{ url_for('savings.index', month=month) }}" novalidate>
+            <div class="form-group">
+                <label for="target">Target amount</label>
+                <input type="number" id="target" name="target" step="0.01" min="0"
+                       value="{{ summary.target or '' }}" placeholder="e.g. 5000">
+                <p class="muted" style="font-size:.82rem; margin-top:5px;">
+                    Leave empty to use your profile goal
+                    ({{ "%.2f"|format(current_user.savings_goal or 0) }}).
+                </p>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Target</button>
+        </form>
+    </div>
+
+    <!-- ============ ALL TIME SUMMARY ============ -->
+    <div class="card">
+        <div class="card-header"><h2>All-Time Summary</h2></div>
+        <table>
+            <tr><th>Months tracked</th><td class="num">{{ totals.months }}</td></tr>
+            <tr><th>Goals achieved</th><td class="num">{{ totals.achieved }}</td></tr>
+            <tr><th>Total saved</th><td class="num">{{ "%.2f"|format(totals.total_saved) }}</td></tr>
+            <tr><th>Success rate</th><td class="num">{{ "%.1f"|format(totals.rate) }}%</td></tr>
+        </table>
+    </div>
+</div>
+
+<!-- ============ HISTORY ============ -->
+<div class="card">
+    <div class="card-header"><h2>Savings History</h2></div>
+    {% if rows %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th class="num">Target</th>
+                    <th class="num">Saved</th>
+                    <th class="num">Difference</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.month }}</td>
+                    <td class="num">{{ "%.2f"|format(row.target_amount or 0) }}</td>
+                    <td class="num">{{ "%.2f"|format(row.saved_amount or 0) }}</td>
+                    <td class="num">{{ "%.2f"|format((row.target_amount or 0) - (row.saved_amount or 0)) }}</td>
+                    <td>
+                        <span class="badge {{ 'badge-green' if row.status == 'achieved' else ('badge-blue' if row.status == 'on_track' else ('badge-amber' if row.status == 'behind' else 'badge-grey')) }}">
+                            {{ 'Achieved' if row.status == 'achieved' else ('On track' if row.status == 'on_track' else ('Behind' if row.status == 'behind' else 'No goal')) }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No savings records yet. Add income and expenses, then revisit this page.</p>
+            <a href="{{ url_for('income.add') }}" class="btn btn-primary">Add income</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+        <div class="stat-card">
+            <div class="stat-label">Goal</div>
+            <div class="stat-value">{{ "%.2f"|format(summary.target) }}</div>
+        </div>
+    </div>
+</div>

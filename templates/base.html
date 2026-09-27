@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Personal Finance Advisor Bot{% endblock %}</title>
+
+    <!-- Our stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body data-month="{{ month }}" data-currency="{{ current_user.currency }}">
+
+    <!-- ================= NAVIGATION BAR ================= -->
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="/">
+                <span class="brand-mark">₹</span>
+                <span>Personal Finance Advisor Bot</span>
+            </a>
+
+            <nav class="nav-links">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('dashboard.index') }}"
+                       class="{{ 'active' if request.endpoint == 'dashboard.index' else '' }}">Dashboard</a>
+                    <a href="{{ url_for('income.index') }}"
+                       class="{{ 'active' if request.blueprint == 'income' else '' }}">Income</a>
+                    <a href="{{ url_for('expenses.index') }}"
+                       class="{{ 'active' if request.blueprint == 'expenses' else '' }}">Expenses</a>
+                    <a href="{{ url_for('budgets.index') }}"
+                       class="{{ 'active' if request.blueprint == 'budgets' else '' }}">Budgets</a>
+                    <a href="{{ url_for('savings.index') }}"
+                       class="{{ 'active' if request.blueprint == 'savings' else '' }}">Savings</a>
+                    <a href="{{ url_for('analysis.index') }}"
+                       class="{{ 'active' if request.blueprint == 'analysis' else '' }}">Analysis</a>
+                    <a href="{{ url_for('reports.index') }}"
+                       class="{{ 'active' if request.blueprint == 'reports' else '' }}">Reports</a>
+                    <a href="{{ url_for('ai.insights') }}"
+                       class="{{ 'active' if request.blueprint == 'ai' else '' }}">AI Advisor</a>
+                    <a href="{{ url_for('auth.profile') }}"
+                       class="{{ 'active' if request.endpoint == 'auth.profile' else '' }}">Profile</a>
+                    <!-- Log Out must be a POST form: logging out changes
+                         server-side state, so a plain <a href> would let any
+                         page, or a browser prefetch, log the user out. The
+                         data-no-validate attribute keeps forms.js from
+                         hijacking this button (see init() in forms.js). -->
+                    <form method="POST" action="{{ url_for('auth.logout') }}"
+                          class="nav-logout" data-no-validate>
+                        <button type="submit" class="nav-logout-btn"
+                                title="Log out of your account">Log Out</button>
+                    </form>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}">Log In</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Register</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <!-- ================= FLASH MESSAGES =================
+         Flash messages are short notes stored in the session, used to
+         tell the user "Saved!" or "Invalid amount!" after a form submit. -->
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-area">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- ================= PAGE CONTENT =================
+         Child templates fill this block with their own HTML. -->
+    <main class="container page">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="footer">
+        <div class="container">
+            <p>Personal Finance Advisor Bot &mdash; Flask &middot; SQLAlchemy &middot; SQLite &middot; Gemini AI</p>
+        </div>
+    </footer>
+
+    {% block scripts %}
+    <!-- Chart.js draws the dashboard charts from our JSON API -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='js/forms.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
+</body>
+</html>

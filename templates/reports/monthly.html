@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}Report {{ r.month }}{% endblock %}
+
+{% block content %}
+<div class="card-header" style="border:none; padding:0 0 16px 0;">
+    <h1>Financial Report &mdash; {{ r.month }}</h1>
+    <div>
+        <a class="btn btn-secondary btn-sm" href="{{ url_for('reports.index') }}">All reports</a>
+        <form method="POST" action="{{ url_for('reports.generate', month=r.month) }}" style="display:inline;">
+            <button type="submit" class="btn btn-secondary btn-sm">
+                {{ 'Re-save report' if stored else 'Save report' }}
+            </button>
+        </form>
+        <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">Print</button>
+    </div>
+</div>
+
+<div class="card" style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('reports.monthly', month=prev_month) }}">&larr; Previous</a>
+    <span class="muted">
+        {{ r.start.strftime('%d %b') }} &ndash; {{ r.end.strftime('%d %b %Y') }}
+        ({{ r.days }} days)
+    </span>
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('reports.monthly', month=next_month) }}">Next &rarr;</a>
+</div>
+
+{% if stored %}
+<div class="card" style="background:#f0fdf4; border-color:#86efac; padding:12px 18px;">
+    <span class="badge badge-green">Saved report</span>
+    <span class="muted" style="font-size:.86rem; margin-left:8px;">
+        frozen on {{ stored.generated_at.strftime('%d %b %Y, %H:%M') if stored.generated_at else '-' }}
+    </span>
+</div>
+{% endif %}
+
+<!-- ============ HEADLINE SUMMARY ============ -->
+<div class="stat-grid">
+    <div class="stat-card stat-green">
+        <div class="stat-label">Total Income</div>
+        <div class="stat-value">{{ "%.2f"|format(r.income) }}</div>
+    </div>
+    <div class="stat-card stat-red">
+        <div class="stat-label">Total Expenses</div>
+        <div class="stat-value">{{ "%.2f"|format(r.expenses) }}</div>
+    </div>
+    <div class="stat-card {{ 'stat-red' if r.savings < 0 else 'stat-green' }}">
+        <div class="stat-label">Savings</div>
+        <div class="stat-value">{{ "%.2f"|format(r.savings) }}</div>
+        <div class="stat-hint">{{ "%.1f"|format(r.savings_rate) }}% of income</div>
+    </div>
+    <div class="stat-card stat-amber">
+        <div class="stat-label">Health Score</div>
+        <div class="stat-value">{{ r.health.score }}</div>
+
+<!-- ============ INCOME BREAKDOWN ============ -->
+{% if r.income_types %}
+<div class="card">
+    <div class="card-header"><h2>Income by Source</h2></div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Type</th><th class="num">Amount</th><th class="num">Share</th></tr>
+            </thead>
+            <tbody>
+                {% for name, value in r.income_types.items()|sort %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td class="num">{{ "%.2f"|format(value) }}</td>
+                    <td class="num">{{ "%.1f"|format(value / r.income * 100 if r.income else 0) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- ============ CATEGORY BREAKDOWN ============ -->
+<div class="card">
+    <div class="card-header"><h2>Spending by Category</h2></div>
+    {% if r.breakdown %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th class="num">Amount</th>
+                    <th class="num">Share</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for name, value in r.breakdown %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td class="num">{{ "%.2f"|format(value) }}</td>
+                    <td class="num">{{ "%.1f"|format(value / r.expenses * 100 if r.expenses else 0) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="empty-state"><p>No expenses recorded in {{ r.month }}.</p></div>
+    {% endif %}
+</div>
+
+<!-- ============ BUDGET PERFORMANCE ============ -->
+<div class="card">
+    <div class="card-header"><h2>Budget Performance</h2></div>
+    {% if r.budget_rows %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th class="num">Budget</th>
+                    <th class="num">Spent</th>
+                    <th class="num">Difference</th>
+                    <th class="num">Used</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in r.budget_rows %}
+                <tr>
+                    <td>{{ row.name }}</td>
+                    <td class="num">{{ "%.2f"|format(row.planned) }}</td>
+                    <td class="num">{{ "%.2f"|format(row.spent) }}</td>
+                    <td class="num">{{ "%.2f"|format(row.remaining) }}</td>
+                    <td class="num">{{ "%.1f"|format(row.percent) }}%</td>
+                    <td>
+                        <span class="badge {{ 'badge-green' if row.status == 'on_track' else ('badge-amber' if row.status == 'warn' else 'badge-red') }}">
+                            {{ 'On track' if row.status == 'on_track' else ('Near limit' if row.status == 'warn' else 'Over') }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="muted" style="font-size:.86rem; margin-top:10px;">
+        Total budget {{ "%.2f"|format(r.budget_total) }} &middot;
+        used {{ "%.2f"|format(r.budget_used) }} &middot;
+        remaining {{ "%.2f"|format(r.budget_remaining) }}
+    </p>
+    {% else %}
+        <div class="empty-state"><p>No budgets set for {{ r.month }}.</p></div>
+    {% endif %}
+</div>
+
+<!-- ============ WEEKLY VIEW ============ -->
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><h2>Weekly Spending</h2></div>
+        {% if r.weeks %}
+            {% set max_week = r.weeks|map(attribute=1)|max %}
+            {% for label, total, first_day, last_day in r.weeks %}
+            <div style="margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; font-size:.88rem; margin-bottom:4px;">
+                    <span>{{ label }}</span>
+                    <strong>{{ "%.2f"|format(total) }}</strong>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar"
+                         style="width: {{ (total / max_week * 100) if max_week else 0 }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state"><p>No weekly data.</p></div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h2>Health Score Breakdown</h2></div>
+        <table>
+            {% for reason in r.health.reasons %}
+            <tr>
+                <td>{{ reason.label }}</td>
+                <td class="num">{{ reason.points }} / {{ reason.max }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td><strong>Total</strong></td>
+                <td class="num"><strong>{{ r.health.score }} / 100</strong></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<!-- ============ OVERSPENDING ============ -->
+{% if r.overspent %}
+<div class="card" style="border-left:4px solid var(--red);">
+    <h3 style="color:var(--red);">Overspending in {{ r.month }}</h3>
+    <ul style="margin:8px 0 0 18px;">
+        {% for row in r.overspent %}
+        <li><strong>{{ row.name }}</strong> &mdash; over by
+            {{ "%.2f"|format(-row.remaining) }}
+            ({{ "%.0f"|format(row.percent) }}% of budget used)</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- ============ FINDINGS ============ -->
+<div class="card ai-panel">
+    <div class="card-header"><h2>Summary of Findings</h2></div>
+    <ul style="margin:0; padding-left:20px;" class="ai-content">
+        {% for message in r.insights %}
+        <li style="margin-bottom:7px;">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    <p class="muted" style="font-size:.84rem; margin-top:12px;">
+        Built from your records. For Gemini-written advice open the
+        <a href="{{ url_for('ai.insights', month=r.month) }}">AI Advisor</a>.
+    </p>
+</div>
+
+<p class="muted" style="text-align:center; font-size:.84rem;">
+    Report generated on {{ r.generated_on }} &middot;
+    biggest category {{ r.top_category or 'n/a' }} ({{ "%.1f"|format(r.top_share) }}%)
+    &middot; average {{ "%.2f"|format(r.daily_average) }} per day
+</p>
+{% endblock %}
+
+        <div class="stat-hint">{{ r.health.label }}</div>
+    </div>
+</div>

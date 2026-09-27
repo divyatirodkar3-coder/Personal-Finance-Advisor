@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Budgets{% endblock %}
+
+{% block content %}
+<div class="card-header" style="border:none; padding:0 0 16px 0;">
+    <h1>Budgets</h1>
+    <div>
+        <form method="POST" action="{{ url_for('ai.budget_plan', month=month) }}"
+              style="display:inline;">
+            <input type="hidden" name="apply" value="1">
+            <button type="submit" class="btn btn-secondary">Generate with AI</button>
+        </form>
+        <a href="{{ url_for('budgets.add') }}" class="btn btn-primary">+ Set Budget</a>
+    </div>
+</div>
+
+<!-- Month navigation -->
+<div class="card" style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('budgets.index', month=prev_month) }}">&larr; Previous</a>
+    <strong>{{ month }}</strong>
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('budgets.index', month=next_month) }}">Next &rarr;</a>
+</div>
+
+<!-- Whole-month summary -->
+{% if totals.whole_planned %}
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-label">Overall budget</div>
+        <div class="stat-value">{{ "%.2f"|format(totals.whole_planned) }}</div>
+    </div>
+    <div class="stat-card stat-red">
+        <div class="stat-label">Spent so far</div>
+        <div class="stat-value">{{ "%.2f"|format(totals.spent) }}</div>
+    </div>
+    <div class="stat-card {{ 'stat-red' if totals.remaining < 0 else 'stat-green' }}">
+        <div class="stat-label">{{ 'Over budget by' if totals.remaining < 0 else 'Still available' }}</div>
+        <div class="stat-value">{{ "%.2f"|format(totals.remaining if totals.remaining >= 0 else -totals.remaining) }}</div>
+    </div>
+    <div class="stat-card {{ 'stat-amber' if totals.status == 'warn' else ('stat-red' if totals.status == 'over' else 'stat-green') }}">
+        <div class="stat-label">Budget used</div>
+        <div class="stat-value">{{ "%.1f"|format(totals.percent) }}%</div>
+    </div>
+</div>
+{% else %}
+<div class="card" style="padding:14px 20px;">
+    <p class="muted" style="margin:0;">
+        No overall monthly budget set for {{ month }}.
+        <a href="{{ url_for('budgets.add') }}">Set one</a> to track your whole month at a glance.
+    </p>
+</div>
+{% endif %}
+
+<!-- ============ CATEGORY BUDGET PERFORMANCE ============ -->
+<div class="card">
+    <div class="card-header"><h2>Budget Performance by Category</h2></div>
+    {% if rows %}
+        {% for row in rows %}
+        <div style="margin-bottom:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:5px;">
+                <span style="font-weight:600;">
+                    <span style="display:inline-block; width:11px; height:11px; border-radius:3px; background:{{ row.color }}; margin-right:7px;"></span>
+                    {{ row.name }}
+                </span>
+                <span>
+                    <span class="badge {{ 'badge-green' if row.status == 'on_track' else ('badge-amber' if row.status == 'warn' else 'badge-red') }}">
+                        {{ 'ON TRACK' if row.status == 'on_track' else ('NEAR LIMIT' if row.status == 'warn' else 'OVER BUDGET') }}
+                    </span>
+                    <span class="muted" style="margin-left:8px;">
+                        {{ "%.2f"|format(row.spent) }} / {{ "%.2f"|format(row.planned) }}
+                        ({{ "%.1f"|format(row.percent) }}%)
+                    </span>
+                </span>
+            </div>
+            <div class="progress">
+                <div class="progress-bar {{ row.css }}"
+                     style="width: {{ row.percent if row.percent < 100 else 100 }}%;"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:.82rem; color:var(--muted); margin-top:4px;">
+                <span>
+                    {% if row.remaining >= 0 %}Left: {{ "%.2f"|format(row.remaining) }}
+                    {% else %}Over by: {{ "%.2f"|format(-row.remaining) }}{% endif %}
+                </span>
+                <form method="POST" action="{{ url_for('budgets.delete', budget_id=row.plan.id) }}"
+                      onsubmit="return confirm('Delete the {{ row.name }} budget?');">
+                    <button type="submit" class="btn btn-secondary btn-sm">Delete</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <p>No category budgets set for {{ month }}.</p>
+            <a href="{{ url_for('budgets.add') }}" class="btn btn-primary">Set your first budget</a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- ============ SUGGESTIONS (rule-based planning engine) ============ -->
+{% if suggestions %}
+<div class="card">
+    <div class="card-header">
+        <h2>Suggested Budget Plan</h2>
+        <span class="badge badge-blue">rule-based &middot; Gemini in Stage 11</span>
+    </div>
+    <p class="muted" style="margin-bottom:14px;">
+        Built from your real income and actual spending for {{ month }}.
+        Target: spend about 70% of income and save about 20%.
+    </p>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th class="num">You spent</th>
+                    <th class="num">Suggested limit</th>
+                    <th>Why</th>
+                    <th class="num">Apply</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in suggestions %}
+                <tr>
+                    <td>
+                        <span style="display:inline-block; width:11px; height:11px; border-radius:3px; background:{{ s.color }}; margin-right:7px;"></span>
+                        {{ s.name }}
+                    </td>
+                    <td class="num">{{ "%.2f"|format(s.current) }}</td>
+                    <td class="num"><strong>{{ "%.2f"|format(s.suggested) }}</strong></td>
+                    <td class="muted" style="font-size:.85rem;">{{ s.reason }}</td>
+                    <td class="num">
+                        {% if s.category_id %}
+                        <form method="POST" action="{{ url_for('budgets.apply_suggestion') }}">
+                            <input type="hidden" name="month" value="{{ month }}">
+                            <input type="hidden" name="category_id" value="{{ s.category_id }}">
+                            <input type="hidden" name="amount" value="{{ s.suggested }}">
+                            <button type="submit" class="btn btn-primary btn-sm">Use this</button>
+                        </form>
+                        {% else %}
+                        <span class="muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-header"><h2>Suggested Budget Plan</h2></div>
+    <div class="empty-state">
+        <p>No suggestions yet - record some income and expenses first.</p>
+        <a href="{{ url_for('income.add') }}" class="btn btn-secondary">Add income</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

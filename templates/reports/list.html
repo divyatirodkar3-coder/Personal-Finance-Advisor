@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="card-header" style="border:none; padding:0 0 16px 0;">
+    <h1>Monthly Financial Reports</h1>
+    {% if has_data %}
+    <form method="POST" action="{{ url_for('reports.generate_all') }}">
+        <button type="submit" class="btn btn-secondary">Generate all reports</button>
+    </form>
+    {% endif %}
+</div>
+
+{% if not has_data %}
+<div class="card">
+    <div class="empty-state">
+        <p>No income or expenses recorded yet, so there is nothing to report.</p>
+        <a href="{{ url_for('income.add') }}" class="btn btn-primary">Add income first</a>
+    </div>
+</div>
+{% else %}
+
+<!-- ============ SAVED REPORTS ============ -->
+<div class="card">
+    <div class="card-header">
+        <h2>Saved Reports</h2>
+        <span class="badge badge-grey">{{ saved|length }}</span>
+    </div>
+    {% if saved %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th class="num">Income</th>
+                    <th class="num">Expenses</th>
+                    <th class="num">Savings</th>
+                    <th class="num">Save rate</th>
+                    <th class="num">Health</th>
+                    <th>Generated</th>
+                    <th class="num">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in saved %}
+                <tr>
+                    <td><strong>{{ row.month }}</strong></td>
+                    <td class="num">{{ "%.2f"|format(row.total_income) }}</td>
+                    <td class="num">{{ "%.2f"|format(row.total_expenses) }}</td>
+                    <td class="num">{{ "%.2f"|format(row.total_savings) }}</td>
+                    <td class="num">{{ "%.1f"|format(row.savings_rate) }}%</td>
+                    <td class="num">{{ row.health_score }}</td>
+                    <td class="muted" style="font-size:.82rem;">
+                        {{ row.generated_at.strftime('%d %b %Y, %H:%M') if row.generated_at else '-' }}
+                    </td>
+                    <td class="num">
+                        <div class="table-actions" style="justify-content:flex-end;">
+                            <a class="btn btn-secondary btn-sm" href="{{ url_for('reports.monthly', month=row.month) }}">View</a>
+                            <form method="POST" action="{{ url_for('reports.delete', month=row.month) }}"
+                                  onsubmit="return confirm('Delete the saved report for {{ row.month }}?');">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No reports saved yet. Open a month and click "Save report".</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- ============ MONTHS WITH DATA (not yet reported) ============ -->
+{% set reported = saved|map(attribute='month')|list %}
+{% set pending = available|reject('in', reported)|list %}
+{% if pending %}
+<div class="card">
+    <div class="card-header"><h2>Months with data, no saved report</h2></div>
+    <div class="form-actions">
+        {% for m in pending %}
+        <a class="btn btn-secondary btn-sm" href="{{ url_for('reports.monthly', month=m) }}">
+            {{ m }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

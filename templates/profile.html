@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<h1>My Profile</h1>
+<p class="muted" style="margin-bottom:20px;">Manage your account details and password.</p>
+
+<div class="grid-2">
+    <!-- ============ DETAILS FORM ============ -->
+    <div class="card">
+        <div class="card-header"><h2>Account Details</h2></div>
+        <form method="POST" action="{{ url_for('auth.profile') }}" novalidate>
+            <input type="hidden" name="action" value="details">
+
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" value="{{ current_user.username }}" disabled>
+                <p class="field-error" style="color:var(--muted);">Username cannot be changed.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="full_name">Full name</label>
+                <input type="text" id="full_name" name="full_name"
+                       value="{{ current_user.full_name or '' }}" maxlength="120">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email address</label>
+                <input type="email" id="email" name="email"
+                       value="{{ current_user.email }}" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="currency">Currency symbol</label>
+                    <input type="text" id="currency" name="currency"
+                           value="{{ current_user.currency }}" maxlength="8">
+                </div>
+                <div class="form-group">
+                    <label for="savings_goal">Monthly savings goal</label>
+                    <input type="number" id="savings_goal" name="savings_goal"
+                           value="{{ current_user.savings_goal }}" min="0" step="0.01">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Details</button>
+        </form>
+    </div>
+
+    <!-- ============ PASSWORD FORM + SUMMARY ============ -->
+    <div>
+        <div class="card">
+            <div class="card-header"><h2>Change Password</h2></div>
+            <form method="POST" action="{{ url_for('auth.profile') }}" novalidate>
+                <input type="hidden" name="action" value="password">
+
+                <div class="form-group">
+                    <label for="current_password">Current password</label>
+                    <input type="password" id="current_password" name="current_password" required>
+                </div>
+                <div class="form-group">
+                    <label for="new_password">New password</label>
+                    <input type="password" id="new_password" name="new_password" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm new password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Update Password</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>Your Data</h2></div>
+            <p class="muted" style="margin-bottom:10px;">Member since {{ current_user.created_at.strftime('%d %b %Y') if current_user.created_at else '-' }}</p>
+            <table>
+                <tr><th>Income records</th><td class="num">{{ counts.incomes }}</td></tr>
+                <tr><th>Expenses logged</th><td class="num">{{ counts.expenses }}</td></tr>
+                <tr><th>Expense categories</th><td class="num">{{ counts.categories }}</td></tr>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

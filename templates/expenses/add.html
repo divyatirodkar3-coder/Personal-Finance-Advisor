@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if editing else 'Add' }} Expense{% endblock %}
+
+{% block content %}
+<div class="auth-wrap" style="max-width:600px;">
+    <div class="card">
+        <div class="card-header">
+            <h2>{{ 'Edit Expense' if editing else 'Add Expense' }}</h2>
+            <a href="{{ url_for('expenses.index') }}" class="btn btn-secondary btn-sm">Back</a>
+        </div>
+
+        <form method="POST" novalidate>
+            <div class="form-group">
+                <label for="title">What was it? *</label>
+                <input type="text" id="title" name="title" data-label="Expense title"
+                       value="{{ form.title }}"
+                       placeholder="e.g. Groceries at D-Mart, Bus fare" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="amount">Amount *</label>
+                    <input type="number" id="amount" name="amount" step="0.01" min="0.01"
+                           data-label="Amount" value="{{ form.amount }}"
+                           placeholder="0.00" required>
+                </div>
+                <div class="form-group">
+                    <label for="expense_date">Date *</label>
+                    <input type="date" id="expense_date" name="expense_date"
+                           data-label="Expense date" value="{{ form.expense_date }}" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="category_id">Category</label>
+                    <select id="category_id" name="category_id">
+                        <option value="">-- No category --</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}"
+                                {{ 'selected' if form.category_id|string == category.id|string else '' }}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="payment_method">Paid via</label>
+                    <select id="payment_method" name="payment_method">
+                        {% for method in payment_methods %}
+                            <option value="{{ method }}"
+                                {{ 'selected' if form.payment_method == method else '' }}>{{ method }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="notes">Notes (optional)</label>
+                <textarea id="notes" name="notes" rows="2">{{ form.notes }}</textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    {{ 'Save Changes' if editing else 'Save Expense' }}
+                </button>
+                <a href="{{ url_for('expenses.index') }}" class="btn btn-secondary">Cancel</a>
+                {% if editing %}
+                    <a href="{{ url_for('expenses.index') }}" class="btn btn-danger">Delete</a>
+                {% endif %}
+            </div>
+        </form>
+
+        {% if not categories %}
+            <p class="field-error" style="margin-top:14px;">
+                You have no categories yet.
+                <a href="{{ url_for('expenses.categories') }}">Create one here</a> to categorise this expense.
+            </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
