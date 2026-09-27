@@ -127,3 +127,6 @@ Detailed documentation lives in the [`documentation/`](documentation/) folder:
   instead of Gemini, and is clearly labelled as such.
 - No `.env` file, API key, or other secret is included anywhere in this
   project or its documentation — you provide your own in a local `.env` file.
+
+# Personal-Finance-Advisor
+AI-powered personal finance advisor for tracking income, expenses, budgets, savings, and financial insights.
