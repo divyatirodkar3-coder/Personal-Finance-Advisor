@@ -27,3 +27,6 @@ google-genai>=2.0
 
 # --- Testing (not needed to run the app) ---
 pytest>=8.0
+
+# --- Production server (Render) ---
+gunicorn>=23.0
